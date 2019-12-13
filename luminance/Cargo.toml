@@ -27,4 +27,3 @@ optional = true
 image = "0.22"
 luminance-derive = "../luminance-derive"
 luminance-glfw = "../luminance-glfw"
-luminance-glutin = "../luminance-glutin"
