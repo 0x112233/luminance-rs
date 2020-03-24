@@ -18,8 +18,8 @@ maintenance = { status = "actively-developed" }
 [dependencies]
 gl = "0.13"
 glfw = { version = "0.33", default-features = false }
-luminance = "0.37"
-luminance-windowing = "0.8"
+luminance = { path = "../luminance" }
+luminance-windowing = { path = "../luminance-windowing" }
 
 [features]
 default = ["glfw-sys"]

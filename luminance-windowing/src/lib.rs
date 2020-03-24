@@ -67,6 +67,7 @@ pub enum CursorMode {
 pub struct WindowOpt {
   cursor_mode: CursorMode,
   num_samples: Option<u32>,
+  use_vsync: bool
 }
 
 impl Default for WindowOpt {
@@ -78,6 +79,7 @@ impl Default for WindowOpt {
     WindowOpt {
       cursor_mode: CursorMode::Visible,
       num_samples: None,
+      use_vsync: true
     }
   }
 }
@@ -113,6 +115,21 @@ impl WindowOpt {
   #[inline]
   pub fn num_samples(&self) -> Option<u32> {
     self.num_samples
+  }
+
+  /// Set whether or not vsync should b eused
+  #[inline]
+  pub fn set_vsync(self, use_vsync: bool) -> Self {
+    WindowOpt {
+      use_vsync,
+      ..self
+    }
+  }
+
+  /// Get whether or not vsync should be used
+  #[inline]
+  pub fn use_vsync(&self) -> bool {
+    self.use_vsync
   }
 }
 

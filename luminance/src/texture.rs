@@ -727,6 +727,11 @@ where L: Layerable,
   pub fn size(&self) -> D::Size {
     self.size
   }
+
+  /// Get the raw GLUInt handle
+  pub fn raw_handle(&self) -> u32 {
+    self.raw.handle as u32
+  }
 }
 
 /// Whether mipmaps should be generated.

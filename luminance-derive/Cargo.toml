@@ -24,4 +24,4 @@ quote = "1"
 syn = "1"
 
 [dev-dependencies]
-luminance = "0.37"
+luminance = { path = "../luminance" }

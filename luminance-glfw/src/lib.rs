@@ -15,7 +15,7 @@ use std::os::raw::c_void;
 use std::rc::Rc;
 use std::sync::mpsc::Receiver;
 
-pub use glfw::{Action, InitError, Key, MouseButton, WindowEvent};
+pub use glfw::{Action, InitError, Key, Modifiers, MouseButton, Scancode, WindowEvent};
 
 /// Error that can be risen while creating a surface.
 #[derive(Debug)]
@@ -60,6 +60,7 @@ pub struct GlfwSurface {
   gfx_state: Rc<RefCell<GraphicsState>>,
   opts: WindowOpt
 }
+
 
 unsafe impl GraphicsContext for GlfwSurface {
   fn state(&self) -> &Rc<RefCell<GraphicsState>> {
@@ -122,7 +123,12 @@ impl Surface for GlfwSurface {
     }
 
     window.set_all_polling(true);
-    glfw.set_swap_interval(SwapInterval::Sync(1));
+    let swap_interval = match win_opt.use_vsync() {
+      true  => SwapInterval::Sync(1),
+      false => SwapInterval::None,
+    };
+
+    glfw.set_swap_interval(swap_interval);
 
     // init OpenGL
     gl::load_with(|s| window.get_proc_address(s) as *const c_void);
