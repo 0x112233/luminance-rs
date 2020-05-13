@@ -208,7 +208,8 @@ impl<'a, C> Builder<'a, C> where C: ?Sized + GraphicsContext {
 
       gl::Viewport(0, 0, framebuffer.width() as GLint, framebuffer.height() as GLint);
       gl::ClearColor(clear_color[0], clear_color[1], clear_color[2], clear_color[3]);
-      gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+      gl::ClearDepth(1.);
+      gl::Clear(gl::DEPTH_BUFFER_BIT | gl::COLOR_BUFFER_BIT);
     }
 
     let binding_stack = &self.binding_stack;
