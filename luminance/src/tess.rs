@@ -645,6 +645,11 @@ impl Tess {
     let vert_nb = vert_nb as GLsizei;
     let inst_nb = inst_nb as GLsizei;
 
+    // If instances are present but should not be rendered, skip rendering
+    if !self.instance_buffers.is_empty() && self.inst_nb == 0 {
+      return;
+    }
+
     unsafe {
       let mut gfx_st = ctx.state().borrow_mut();
       gfx_st.bind_vertex_array(self.vao, Bind::Cached);
@@ -686,6 +691,11 @@ impl Tess {
         }
       }
     }
+  }
+
+  /// Set the number of instances to be rendered
+  pub fn set_inst_nb(&mut self, inst_nb: usize) {
+    self.inst_nb = inst_nb;
   }
 
   /// Obtain a slice over the vertex buffer.

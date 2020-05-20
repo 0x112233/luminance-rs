@@ -90,9 +90,9 @@ pub(crate) fn generate_enum_semantics_impl(
         // field-based code generation
         let field_gen = quote!{
           // vertex attrib type
-          #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+          #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
           pub struct #ty_name {
-            repr: #repr_ty_name
+            pub repr: #repr_ty_name
           }
 
           // convert from the repr type to the vertex attrib type

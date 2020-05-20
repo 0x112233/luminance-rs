@@ -218,7 +218,7 @@ where L: Layerable,
             .map_err(FramebufferError::TextureError)?;
           gl::FramebufferTexture(gl::FRAMEBUFFER, gl::COLOR_ATTACHMENT0 + i as GLenum, *texture, 0);
         }
-git
+
         // specify the list of color buffers to draw to
         let color_buf_nb = color_formats.len() as GLsizei;
         let color_buffers: Vec<_> =
