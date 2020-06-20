@@ -1,4 +1,4 @@
-use crate::attrib::{AttrError, get_field_attr_once, get_field_flag_once};
+use crate::attrib::{get_field_attr_once, get_field_flag_once, AttrError};
 use proc_macro::TokenStream;
 use quote::quote;
 use std::fmt;
@@ -28,7 +28,7 @@ impl fmt::Display for DeriveUniformInterfaceError {
 
 pub(crate) fn generate_uniform_interface_impl(
   ident: Ident,
-  struct_: DataStruct
+  struct_: DataStruct,
 ) -> Result<TokenStream, DeriveUniformInterfaceError> {
   match struct_.fields {
     Fields::Named(named_fields) => {
@@ -45,54 +45,49 @@ pub(crate) fn generate_uniform_interface_impl(
           field.attrs.iter(),
           "uniform",
           "unbound",
-          KNOWN_SUBKEYS
-        ).map_err(DeriveUniformInterfaceError::UnboundError)?;
-        let name = get_field_attr_once(
-          &ident,
-          field.attrs.iter(),
-          "uniform",
-          "name",
-          KNOWN_SUBKEYS
-        ).map(|ident: Ident| {
-          ident.to_string()
-        }).or_else(|e| match e {
-          AttrError::CannotFindAttribute(..) => {
-            Ok(field_ident.to_string())
-          }
+          KNOWN_SUBKEYS,
+        )
+        .map_err(DeriveUniformInterfaceError::UnboundError)?;
+        let name =
+          get_field_attr_once(&ident, field.attrs.iter(), "uniform", "name", KNOWN_SUBKEYS)
+            .map(|ident: Ident| ident.to_string())
+            .or_else(|e| match e {
+              AttrError::CannotFindAttribute(..) => Ok(field_ident.to_string()),
 
-          _ => Err(e)
-        }).map_err(DeriveUniformInterfaceError::NameError)?;
+              _ => Err(e),
+            })
+            .map_err(DeriveUniformInterfaceError::NameError)?;
 
         // the build call is the code that gets a uniform and possibly fails if bound; also handles
         // renaming
         let build_call = if unbound {
-          quote!{
-            builder.ask_unbound(#name)
+          quote! {
+              builder.ask_unbound(#name)
           }
         } else {
-          quote!{
-            builder.ask(#name).map_err(luminance::shader::program::ProgramError::UniformWarning)?
+          quote! {
+              builder.ask(#name).map_err(luminance::shader::program::ProgramError::UniformWarning)?
           }
         };
 
         field_names.push(field_ident.clone());
-        field_decls.push(quote!{
-          let #field_ident = #build_call;
+        field_decls.push(quote! {
+            let #field_ident = #build_call;
         });
       }
 
-      let output = quote!{
-        impl luminance::shader::program::UniformInterface for #ident {
-          fn uniform_interface(
-            builder: &mut luminance::shader::program::UniformBuilder,
-            _: ()
-          ) -> Result<Self, luminance::shader::program::ProgramError> {
-            #(#field_decls)*
+      let output = quote! {
+          impl luminance::shader::program::UniformInterface for #ident {
+              fn uniform_interface(
+                  builder: &mut luminance::shader::program::UniformBuilder,
+                  _: ()
+              ) -> Result<Self, luminance::shader::program::ProgramError> {
+                  #(#field_decls)*
 
-            let iface = #ident { #(#field_names,)* };
-            Ok(iface)
+                  let iface = #ident { #(#field_names,)* };
+                  Ok(iface)
+              }
           }
-        }
       };
 
       Ok(output.into())

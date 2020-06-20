@@ -56,7 +56,7 @@ pub enum CursorMode {
   /// The cursor exists yet has been disabled.
   Invisible,
   /// The cursor is disabled.
-  Disabled
+  Disabled,
 }
 
 /// Different window options.
@@ -67,7 +67,8 @@ pub enum CursorMode {
 pub struct WindowOpt {
   cursor_mode: CursorMode,
   num_samples: Option<u32>,
-  use_vsync: bool
+  use_vsync: bool,
+  allow_resize: bool,
 }
 
 impl Default for WindowOpt {
@@ -79,7 +80,8 @@ impl Default for WindowOpt {
     WindowOpt {
       cursor_mode: CursorMode::Visible,
       num_samples: None,
-      use_vsync: true
+      use_vsync: true,
+      allow_resize: true
     }
   }
 }
@@ -104,7 +106,10 @@ impl WindowOpt {
   ///
   /// Pass `None` to disable multisampling.
   #[inline]
-  pub fn set_num_samples<S>(self, samples: S) -> Self where S: Into<Option<u32>> {
+  pub fn set_num_samples<S>(self, samples: S) -> Self
+  where
+    S: Into<Option<u32>>,
+  {
     WindowOpt {
       num_samples: samples.into(),
       ..self
@@ -117,19 +122,28 @@ impl WindowOpt {
     self.num_samples
   }
 
-  /// Set whether or not vsync should b eused
+  /// Set whether or not vsync should be used
   #[inline]
   pub fn set_vsync(self, use_vsync: bool) -> Self {
-    WindowOpt {
-      use_vsync,
-      ..self
-    }
+    WindowOpt { use_vsync, ..self }
   }
 
   /// Get whether or not vsync should be used
   #[inline]
   pub fn use_vsync(&self) -> bool {
     self.use_vsync
+  }
+
+  /// Set whether or not resizing should be allowed
+  #[inline]
+  pub fn set_allow_resize(self, allow_resize: bool) -> Self {
+    WindowOpt { allow_resize, ..self }
+  }
+
+  /// Get whether or not resizing should be allowed
+  #[inline]
+  pub fn allow_resize(&self) -> bool {
+    self.allow_resize
   }
 }
 
@@ -155,7 +169,9 @@ pub trait Surface: GraphicsContext + Sized {
   fn set_cursor_mode(&mut self, mode: CursorMode) -> &mut Self;
 
   /// Change the multisampling state.
-  fn set_num_samples<S>(&mut self, samples: S) -> &mut Self where S: Into<Option<u32>>;
+  fn set_num_samples<S>(&mut self, samples: S) -> &mut Self
+  where
+    S: Into<Option<u32>>;
 
   /// Size of the surface’s framebuffer.
   fn size(&self) -> [u32; 2];

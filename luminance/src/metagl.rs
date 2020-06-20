@@ -53,7 +53,9 @@ mod meta {
 
   #[inline(always)]
   pub unsafe fn with_cstring<F, A>(s: &str, f: F) -> Result<A, NulError>
-  where F: FnOnce(*const GLchar) -> A {
+  where
+    F: FnOnce(*const GLchar) -> A,
+  {
     let bytes = s.as_bytes();
 
     if bytes.contains(&b'\0') {
@@ -618,7 +620,15 @@ mod meta {
       #[allow(non_snake_case)]
       #[inline]
       #[link_name = "glTexSubImage1D"]
-      pub fn TexSubImage1D(_: GLenum, _: GLint, _: GLint, _: GLsizei, _: GLenum, _: GLenum, _: *const c_void);
+      pub fn TexSubImage1D(
+        _: GLenum,
+        _: GLint,
+        _: GLint,
+        _: GLsizei,
+        _: GLenum,
+        _: GLenum,
+        _: *const c_void,
+      );
 
       #[allow(non_snake_case)]
       #[inline]
@@ -760,7 +770,14 @@ mod meta {
       #[allow(non_snake_case)]
       #[inline]
       #[link_name = "glVertexAttribPointer"]
-      pub fn VertexAttribPointer(_: GLuint, _: GLint, _: GLenum, _: GLboolean, _: GLsizei, _: *const c_void);
+      pub fn VertexAttribPointer(
+        _: GLuint,
+        _: GLint,
+        _: GLenum,
+        _: GLboolean,
+        _: GLsizei,
+        _: *const c_void,
+      );
 
       #[allow(non_snake_case)]
       #[inline]

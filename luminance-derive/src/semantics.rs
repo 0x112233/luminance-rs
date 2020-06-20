@@ -1,4 +1,4 @@
-use crate::attrib::{AttrError, get_field_attr_once};
+use crate::attrib::{get_field_attr_once, AttrError};
 use proc_macro::TokenStream;
 use quote::quote;
 use std::fmt;
@@ -9,7 +9,7 @@ const KNOWN_SUBKEYS: &[&str] = &["name", "repr", "wrapper"];
 #[derive(Debug)]
 pub(crate) enum SemanticsImplError {
   AttributeErrors(Vec<AttrError>),
-  NoField
+  NoField,
 }
 
 impl fmt::Display for SemanticsImplError {
@@ -24,7 +24,7 @@ impl fmt::Display for SemanticsImplError {
         Ok(())
       }
 
-      SemanticsImplError::NoField => f.write_str("semantics cannot be empty sets")
+      SemanticsImplError::NoField => f.write_str("semantics cannot be empty sets"),
     }
   }
 }
@@ -34,24 +34,28 @@ impl fmt::Display for SemanticsImplError {
 ///   (name, repr, wrapper)
 fn get_vertex_sem_attribs<'a, A>(
   var_name: &Ident,
-  attrs: A
+  attrs: A,
 ) -> Result<(Ident, Type, Type), AttrError>
-where A: Iterator<Item = &'a Attribute> + Clone {
-  let sem_name = get_field_attr_once::<_, Ident>(var_name, attrs.clone(), "sem", "name", KNOWN_SUBKEYS)?;
-  let sem_repr = get_field_attr_once::<_, Type>(var_name, attrs.clone(), "sem", "repr", KNOWN_SUBKEYS)?;
-  let sem_wrapper = get_field_attr_once::<_, Type>(var_name, attrs, "sem", "wrapper", KNOWN_SUBKEYS)?;
+where
+  A: Iterator<Item = &'a Attribute> + Clone,
+{
+  let sem_name =
+    get_field_attr_once::<_, Ident>(var_name, attrs.clone(), "sem", "name", KNOWN_SUBKEYS)?;
+  let sem_repr =
+    get_field_attr_once::<_, Type>(var_name, attrs.clone(), "sem", "repr", KNOWN_SUBKEYS)?;
+  let sem_wrapper =
+    get_field_attr_once::<_, Type>(var_name, attrs, "sem", "wrapper", KNOWN_SUBKEYS)?;
 
   Ok((sem_name, sem_repr, sem_wrapper))
 }
 
 pub(crate) fn generate_enum_semantics_impl(
   ident: Ident,
-  enum_: DataEnum
+  enum_: DataEnum,
 ) -> Result<TokenStream, SemanticsImplError> {
   let fields = enum_.variants.into_iter().map(|var| {
-    get_vertex_sem_attribs(&var.ident, var.attrs.iter()).map(|attrs| {
-      (var.ident, attrs.0, attrs.1, attrs.2)
-    })
+    get_vertex_sem_attribs(&var.ident, var.attrs.iter())
+      .map(|attrs| (var.ident, attrs.0, attrs.1, attrs.2))
   });
 
   let mut parse_branches = Vec::new();
@@ -71,64 +75,64 @@ pub(crate) fn generate_enum_semantics_impl(
         let ty_name = field.3;
 
         // dynamic branch used for parsing the semantics from a string
-        parse_branches.push(quote!{
-          #sem_name => Ok(#ident::#sem_var)
+        parse_branches.push(quote! {
+            #sem_name => Ok(#ident::#sem_var)
         });
 
         // name of a semantics
-        name_branches.push(quote!{
-          #ident::#sem_var => #sem_name
+        name_branches.push(quote! {
+            #ident::#sem_var => #sem_name
         });
 
-        semantics_set.push(quote!{
-          luminance::vertex::SemanticsDesc {
-            index: #index,
-            name: #sem_name.to_owned()
-          }
+        semantics_set.push(quote! {
+            luminance::vertex::SemanticsDesc {
+                index: #index,
+                name: #sem_name.to_owned()
+            }
         });
 
         // field-based code generation
-        let field_gen = quote!{
-          // vertex attrib type
-          #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
-          pub struct #ty_name {
-            pub repr: #repr_ty_name
-          }
-
-          // convert from the repr type to the vertex attrib type
-          impl From<#repr_ty_name> for #ty_name {
-            fn from(repr: #repr_ty_name) -> Self {
-              #ty_name::new(repr)
+        let field_gen = quote! {
+            // vertex attrib type
+            #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
+            pub struct #ty_name {
+                pub repr: #repr_ty_name
             }
-          }
 
-          // convert from the repr type to the vertex attrib type
-          impl #ty_name {
-            pub const fn new(repr: #repr_ty_name) -> Self {
-             #ty_name {
-               repr
-             }
+            // convert from the repr type to the vertex attrib type
+            impl From<#repr_ty_name> for #ty_name {
+                fn from(repr: #repr_ty_name) -> Self {
+                    #ty_name::new(repr)
+                }
             }
-          }
 
-          // get the associated semantics
-          impl luminance::vertex::HasSemantics for #ty_name {
-            type Sem = #ident;
+            // convert from the repr type to the vertex attrib type
+            impl #ty_name {
+                pub const fn new(repr: #repr_ty_name) -> Self {
+                 #ty_name {
+                     repr
+                 }
+                }
+            }
 
-            const SEMANTICS: Self::Sem = #ident::#sem_var;
-          }
+            // get the associated semantics
+            impl luminance::vertex::HasSemantics for #ty_name {
+                type Sem = #ident;
 
-          // make the vertex attrib impl VertexAttrib by forwarding implementation to the repr type
-          unsafe impl luminance::vertex::VertexAttrib for #ty_name {
-            const VERTEX_ATTRIB_DESC: luminance::vertex::VertexAttribDesc =
-              <#repr_ty_name as luminance::vertex::VertexAttrib>::VERTEX_ATTRIB_DESC;
-          }
+                const SEMANTICS: Self::Sem = #ident::#sem_var;
+            }
+
+            // make the vertex attrib impl VertexAttrib by forwarding implementation to the repr type
+            unsafe impl luminance::vertex::VertexAttrib for #ty_name {
+                const VERTEX_ATTRIB_DESC: luminance::vertex::VertexAttribDesc =
+                    <#repr_ty_name as luminance::vertex::VertexAttrib>::VERTEX_ATTRIB_DESC;
+            }
         };
 
         field_based_gen.push(field_gen);
       }
 
-      Err(e) => errors.push(e)
+      Err(e) => errors.push(e),
     }
   }
 
@@ -141,41 +145,40 @@ pub(crate) fn generate_enum_semantics_impl(
   }
 
   // output generation
-  let output_gen = quote!{
-    impl luminance::vertex::Semantics for #ident {
-      fn index(&self) -> usize {
-        *self as usize
+  let output_gen = quote! {
+      impl luminance::vertex::Semantics for #ident {
+          fn index(&self) -> usize {
+              *self as usize
+          }
+
+          fn name(&self) -> &'static str {
+              match *self {
+                  #(#name_branches,)*
+              }
+          }
+
+          fn semantics_set() -> Vec<luminance::vertex::SemanticsDesc> {
+              vec![#(#semantics_set,)*]
+          }
       }
 
-      fn name(&self) -> &'static str {
-        match *self {
-          #(#name_branches,)*
-        }
-      }
+      // easy parsing
+      impl std::str::FromStr for #ident {
+          type Err = ();
 
-      fn semantics_set() -> Vec<luminance::vertex::SemanticsDesc> {
-        vec![#(#semantics_set,)*]
+          fn from_str(name: &str) -> Result<Self, Self::Err> {
+              match name {
+                  #(#parse_branches,)*
+                  _ => Err(())
+              }
+          }
       }
-    }
-
-    // easy parsing
-    impl std::str::FromStr for #ident {
-      type Err = ();
-
-      fn from_str(name: &str) -> Result<Self, Self::Err> {
-        match name {
-          #(#parse_branches,)*
-          _ => Err(())
-        }
-      }
-    }
   };
 
-  let output = quote!{
-    #output_gen
-    #(#field_based_gen)*
+  let output = quote! {
+      #output_gen
+      #(#field_based_gen)*
   };
 
   Ok(output.into())
 }
-

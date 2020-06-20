@@ -89,7 +89,10 @@ impl Stage {
 
         log.set_len(log_len as usize);
 
-        Err(StageError::CompilationFailed(ty, String::from_utf8(log).unwrap()))
+        Err(StageError::CompilationFailed(
+          ty,
+          String::from_utf8(log).unwrap(),
+        ))
       }
     }
   }
@@ -151,8 +154,7 @@ fn glsl_pragma_src(src: &str) -> String {
   pragma
 }
 
-const GLSL_PRAGMA: &str =
-"#version 330 core\n\
+const GLSL_PRAGMA: &str = "#version 330 core\n\
 #extension GL_ARB_separate_shader_objects : require\n";
 
 fn opengl_shader_type(t: Type) -> GLenum {

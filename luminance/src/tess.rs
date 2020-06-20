@@ -77,8 +77,8 @@ use crate::context::GraphicsContext;
 use crate::metagl::*;
 use crate::state::{Bind, GraphicsState};
 use crate::vertex::{
-  Normalized, VertexBufferDesc, Vertex, VertexAttribDim, VertexAttribDesc, VertexAttribType,
-  VertexDesc, VertexInstancing
+  Normalized, Vertex, VertexAttribDesc, VertexAttribDim, VertexAttribType, VertexBufferDesc,
+  VertexDesc, VertexInstancing,
 };
 use crate::vertex_restart::VertexRestart;
 
@@ -169,17 +169,28 @@ pub enum TessMapError {
 impl fmt::Display for TessMapError {
   fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
     match *self {
-      TessMapError::VertexBufferMapFailed(ref e) =>
-        write!(f, "cannot map tessellation vertex buffer: {}", e),
-      TessMapError::IndexBufferMapFailed(ref e) =>
-        write!(f, "cannot map tessellation index buffer: {}", e),
-      TessMapError::VertexTypeMismatch(ref a, ref b) =>
-       write!(f, "cannot map tessellation: vertex type mismatch between {:?} and {:?}", a, b),
-      TessMapError::IndexTypeMismatch(ref a, ref b) =>
-       write!(f, "cannot map tessellation: index type mismatch between {:?} and {:?}", a, b),
-      TessMapError::ForbiddenAttributelessMapping => f.write_str("cannot map an attributeless buffer"),
-      TessMapError::ForbiddenDeinterleavedMapping =>
+      TessMapError::VertexBufferMapFailed(ref e) => {
+        write!(f, "cannot map tessellation vertex buffer: {}", e)
+      }
+      TessMapError::IndexBufferMapFailed(ref e) => {
+        write!(f, "cannot map tessellation index buffer: {}", e)
+      }
+      TessMapError::VertexTypeMismatch(ref a, ref b) => write!(
+        f,
+        "cannot map tessellation: vertex type mismatch between {:?} and {:?}",
+        a, b
+      ),
+      TessMapError::IndexTypeMismatch(ref a, ref b) => write!(
+        f,
+        "cannot map tessellation: index type mismatch between {:?} and {:?}",
+        a, b
+      ),
+      TessMapError::ForbiddenAttributelessMapping => {
+        f.write_str("cannot map an attributeless buffer")
+      }
+      TessMapError::ForbiddenDeinterleavedMapping => {
         f.write_str("cannot map a deinterleaved buffer as interleaved")
+      }
     }
   }
 }
@@ -280,7 +291,10 @@ impl<'a, C> TessBuilder<'a, C> {
   }
 }
 
-impl<'a, C> TessBuilder<'a, C> where C: GraphicsContext {
+impl<'a, C> TessBuilder<'a, C>
+where
+  C: GraphicsContext,
+{
   /// Add vertices to be part of the tessellation.
   ///
   /// This method can be used in several ways. First, you can decide to use interleaved memory, in
@@ -288,7 +302,11 @@ impl<'a, C> TessBuilder<'a, C> where C: GraphicsContext {
   /// buffer. Second, you can opt-in to use deinterleaved memory, in which case you will have
   /// several, smaller buffers of borrowed data and you will issue a call to this method for all of
   /// them.
-  pub fn add_vertices<V, W>(mut self, vertices: W) -> Self where W: AsRef<[V]>, V: Vertex {
+  pub fn add_vertices<V, W>(mut self, vertices: W) -> Self
+  where
+    W: AsRef<[V]>,
+    V: Vertex,
+  {
     let vertices = vertices.as_ref();
 
     let vb = VertexBuffer {
@@ -302,7 +320,11 @@ impl<'a, C> TessBuilder<'a, C> where C: GraphicsContext {
   }
 
   /// Add instances to be part of the tessellation.
-  pub fn add_instances<V, W>(mut self, instances: W) -> Self where W: AsRef<[V]>, V: Vertex {
+  pub fn add_instances<V, W>(mut self, instances: W) -> Self
+  where
+    W: AsRef<[V]>,
+    V: Vertex,
+  {
     let instances = instances.as_ref();
 
     let vb = VertexBuffer {
@@ -316,7 +338,11 @@ impl<'a, C> TessBuilder<'a, C> where C: GraphicsContext {
   }
 
   /// Set vertex indices in order to specify how vertices should be picked by the GPU pipeline.
-  pub fn set_indices<T, I>(mut self, indices: T) -> Self where T: AsRef<[I]>, I: TessIndex  {
+  pub fn set_indices<T, I>(mut self, indices: T) -> Self
+  where
+    T: AsRef<[I]>,
+    I: TessIndex,
+  {
     let indices = indices.as_ref();
 
     // create a new raw buffer containing the indices and turn it into a vertex buffer
@@ -376,8 +402,8 @@ impl<'a, C> TessBuilder<'a, C> where C: GraphicsContext {
       let mut gfx_st = self.ctx.state().borrow_mut();
 
       let patch_vert_nb = match self.mode {
-          Mode::Patch(nb) => nb,
-          _ => 0,
+        Mode::Patch(nb) => nb,
+        _ => 0,
       };
 
       gl::GenVertexArrays(1, &mut vao);
@@ -407,13 +433,13 @@ impl<'a, C> TessBuilder<'a, C> where C: GraphicsContext {
       }
 
       let restart_index = self.restart_index;
-      let index_state = self.index_buffer.map(move |(buffer, index_type)| {
-        IndexedDrawState {
+      let index_state = self
+        .index_buffer
+        .map(move |(buffer, index_type)| IndexedDrawState {
           restart_index,
           _buffer: buffer,
           index_type,
-        }
-      });
+        });
 
       // convert to OpenGL-friendly internals and return
       Ok(Tess {
@@ -442,13 +468,11 @@ impl<'a, C> TessBuilder<'a, C> where C: GraphicsContext {
         // deduce the number of vertices based on the vertex buffers; they all
         // must be of the same length, otherwise it’s an error
         match self.vertex_buffers.len() {
-          0 => {
-            Err(TessError::AttributelessError("attributeless render with no vertex number".to_owned()))
-          }
+          0 => Err(TessError::AttributelessError(
+            "attributeless render with no vertex number".to_owned(),
+          )),
 
-          1 => {
-            Ok(self.vertex_buffers[0].buf.len())
-          }
+          1 => Ok(self.vertex_buffers[0].buf.len()),
 
           _ => {
             let vert_nb = self.vertex_buffers[0].buf.len();
@@ -475,8 +499,12 @@ impl<'a, C> TessBuilder<'a, C> where C: GraphicsContext {
 
         if incoherent {
           return Err(TessError::LengthIncoherency(self.vert_nb));
-        } else if !self.vertex_buffers.is_empty() && self.vertex_buffers[0].buf.len() < self.vert_nb {
-          return Err(TessError::Overflow(self.vertex_buffers[0].buf.len(), self.vert_nb));
+        } else if !self.vertex_buffers.is_empty() && self.vertex_buffers[0].buf.len() < self.vert_nb
+        {
+          return Err(TessError::Overflow(
+            self.vertex_buffers[0].buf.len(),
+            self.vert_nb,
+          ));
         }
       }
 
@@ -486,7 +514,9 @@ impl<'a, C> TessBuilder<'a, C> where C: GraphicsContext {
 
   /// Check whether any vertex buffer is incoherent in its length according to the input length.
   fn check_incoherent_buffers<'b, B>(mut buffers: B, len: usize) -> bool
-  where B: Iterator<Item = &'b VertexBuffer> {
+  where
+    B: Iterator<Item = &'b VertexBuffer>,
+  {
     !buffers.all(|vb| vb.buf.len() == len)
   }
 
@@ -503,9 +533,7 @@ impl<'a, C> TessBuilder<'a, C> where C: GraphicsContext {
           Ok(0)
         }
 
-        1 => {
-          Ok(self.instance_buffers[0].buf.len())
-        }
+        1 => Ok(self.instance_buffers[0].buf.len()),
 
         _ => {
           let inst_nb = self.instance_buffers[0].buf.len();
@@ -525,8 +553,13 @@ impl<'a, C> TessBuilder<'a, C> where C: GraphicsContext {
 
       if incoherent {
         return Err(TessError::LengthIncoherency(self.inst_nb));
-      } else if !self.instance_buffers.is_empty() && self.instance_buffers[0].buf.len() < self.inst_nb {
-        return Err(TessError::Overflow(self.instance_buffers[0].buf.len(), self.inst_nb));
+      } else if !self.instance_buffers.is_empty()
+        && self.instance_buffers[0].buf.len() < self.inst_nb
+      {
+        return Err(TessError::Overflow(
+          self.instance_buffers[0].buf.len(),
+          self.inst_nb,
+        ));
       }
 
       Ok(self.inst_nb)
@@ -542,7 +575,7 @@ pub enum TessError {
   /// Length incoherency in vertex, index or instance buffers.
   LengthIncoherency(usize),
   /// Overflow when accessing underlying buffers.
-  Overflow(usize, usize)
+  Overflow(usize, usize),
 }
 
 /// Possible tessellation index types.
@@ -641,7 +674,9 @@ pub struct Tess {
 
 impl Tess {
   fn render<C>(&self, ctx: &mut C, start_index: usize, vert_nb: usize, inst_nb: usize)
-  where C: ?Sized + GraphicsContext {
+  where
+    C: ?Sized + GraphicsContext,
+  {
     let vert_nb = vert_nb as GLsizei;
     let inst_nb = inst_nb as GLsizei;
 
@@ -655,7 +690,7 @@ impl Tess {
       gfx_st.bind_vertex_array(self.vao, Bind::Cached);
 
       if self.mode == gl::PATCHES {
-          gfx_st.set_patch_vertex_nb(self.patch_vert_nb);
+        gfx_st.set_patch_vertex_nb(self.patch_vert_nb);
       }
 
       if let Some(index_state) = self.index_state.as_ref() {
@@ -670,7 +705,12 @@ impl Tess {
         }
 
         if inst_nb <= 1 {
-          gl::DrawElements(self.mode, vert_nb, index_state.index_type.to_glenum(), first);
+          gl::DrawElements(
+            self.mode,
+            vert_nb,
+            index_state.index_type.to_glenum(),
+            first,
+          );
         } else {
           gl::DrawElementsInstanced(
             self.mode,
@@ -702,7 +742,10 @@ impl Tess {
   ///
   /// This function fails if you try to obtain a buffer from an attriteless [`Tess`] or
   /// deinterleaved memory.
-  pub fn as_slice<V>(&mut self) -> Result<BufferSlice<V>, TessMapError> where V: Vertex {
+  pub fn as_slice<V>(&mut self) -> Result<BufferSlice<V>, TessMapError>
+  where
+    V: Vertex,
+  {
     match self.vertex_buffers.len() {
       0 => Err(TessMapError::ForbiddenAttributelessMapping),
 
@@ -713,7 +756,9 @@ impl Tess {
         if vb.fmt != target_fmt {
           Err(TessMapError::VertexTypeMismatch(vb.fmt.clone(), target_fmt))
         } else {
-          vb.buf.as_slice().map_err(TessMapError::VertexBufferMapFailed)
+          vb.buf
+            .as_slice()
+            .map_err(TessMapError::VertexBufferMapFailed)
         }
       }
 
@@ -725,7 +770,10 @@ impl Tess {
   ///
   /// This function fails if you try to obtain a buffer from an attriteless [`Tess`] or
   /// deinterleaved memory.
-  pub fn as_slice_mut<V>(&mut self) -> Result<BufferSliceMut<V>, TessMapError> where V: Vertex {
+  pub fn as_slice_mut<V>(&mut self) -> Result<BufferSliceMut<V>, TessMapError>
+  where
+    V: Vertex,
+  {
     match self.vertex_buffers.len() {
       0 => Err(TessMapError::ForbiddenAttributelessMapping),
 
@@ -736,7 +784,9 @@ impl Tess {
         if vb.fmt != target_fmt {
           Err(TessMapError::VertexTypeMismatch(vb.fmt.clone(), target_fmt))
         } else {
-          vb.buf.as_slice_mut().map_err(TessMapError::VertexBufferMapFailed)
+          vb.buf
+            .as_slice_mut()
+            .map_err(TessMapError::VertexBufferMapFailed)
         }
       }
 
@@ -748,19 +798,28 @@ impl Tess {
   ///
   /// This function fails if you try to obtain a buffer from an attriteless [`Tess`] or if no
   /// index buffer is available.
-  pub fn as_index_slice<I>(&mut self) -> Result<BufferSlice<I>, TessMapError> where I: TessIndex {
+  pub fn as_index_slice<I>(&mut self) -> Result<BufferSlice<I>, TessMapError>
+  where
+    I: TessIndex,
+  {
     match self.index_state {
-      Some(IndexedDrawState { ref mut _buffer, ref index_type, .. }) => {
+      Some(IndexedDrawState {
+        ref mut _buffer,
+        ref index_type,
+        ..
+      }) => {
         let target_fmt = I::INDEX_TYPE;
 
         if *index_type != target_fmt {
           Err(TessMapError::IndexTypeMismatch(*index_type, target_fmt))
         } else {
-          _buffer.as_slice().map_err(TessMapError::IndexBufferMapFailed)
+          _buffer
+            .as_slice()
+            .map_err(TessMapError::IndexBufferMapFailed)
         }
       }
 
-      None => Err(TessMapError::ForbiddenAttributelessMapping)
+      None => Err(TessMapError::ForbiddenAttributelessMapping),
     }
   }
 
@@ -768,22 +827,28 @@ impl Tess {
   ///
   /// This function fails if you try to obtain a buffer from an attriteless [`Tess`] or if no
   /// index buffer is available.
-  pub fn as_index_slice_mut<I>(
-    &mut self
-  ) -> Result<BufferSliceMut<I>, TessMapError>
-  where I: TessIndex {
+  pub fn as_index_slice_mut<I>(&mut self) -> Result<BufferSliceMut<I>, TessMapError>
+  where
+    I: TessIndex,
+  {
     match self.index_state {
-      Some(IndexedDrawState { ref mut _buffer, ref index_type, .. }) => {
+      Some(IndexedDrawState {
+        ref mut _buffer,
+        ref index_type,
+        ..
+      }) => {
         let target_fmt = I::INDEX_TYPE;
 
         if *index_type != target_fmt {
           Err(TessMapError::IndexTypeMismatch(*index_type, target_fmt))
         } else {
-          _buffer.as_slice_mut().map_err(TessMapError::IndexBufferMapFailed)
+          _buffer
+            .as_slice_mut()
+            .map_err(TessMapError::IndexBufferMapFailed)
         }
       }
 
-      None => Err(TessMapError::ForbiddenAttributelessMapping)
+      None => Err(TessMapError::ForbiddenAttributelessMapping),
     }
   }
 
@@ -791,7 +856,10 @@ impl Tess {
   ///
   /// This function fails if you try to obtain a buffer from an attriteless [`Tess`] or
   /// deinterleaved memory.
-  pub fn as_inst_slice<V>(&mut self) -> Result<BufferSlice<V>, TessMapError> where V: Vertex {
+  pub fn as_inst_slice<V>(&mut self) -> Result<BufferSlice<V>, TessMapError>
+  where
+    V: Vertex,
+  {
     match self.instance_buffers.len() {
       0 => Err(TessMapError::ForbiddenAttributelessMapping),
 
@@ -802,7 +870,9 @@ impl Tess {
         if vb.fmt != target_fmt {
           Err(TessMapError::VertexTypeMismatch(vb.fmt.clone(), target_fmt))
         } else {
-          vb.buf.as_slice().map_err(TessMapError::VertexBufferMapFailed)
+          vb.buf
+            .as_slice()
+            .map_err(TessMapError::VertexBufferMapFailed)
         }
       }
 
@@ -814,7 +884,10 @@ impl Tess {
   ///
   /// This function fails if you try to obtain a buffer from an attriteless [`Tess`] or
   /// deinterleaved memory.
-  pub fn as_inst_slice_mut<V>(&mut self) -> Result<BufferSliceMut<V>, TessMapError> where V: Vertex {
+  pub fn as_inst_slice_mut<V>(&mut self) -> Result<BufferSliceMut<V>, TessMapError>
+  where
+    V: Vertex,
+  {
     match self.instance_buffers.len() {
       0 => Err(TessMapError::ForbiddenAttributelessMapping),
 
@@ -825,7 +898,9 @@ impl Tess {
         if vb.fmt != target_fmt {
           Err(TessMapError::VertexTypeMismatch(vb.fmt.clone(), target_fmt))
         } else {
-          vb.buf.as_slice_mut().map_err(TessMapError::VertexBufferMapFailed)
+          vb.buf
+            .as_slice_mut()
+            .map_err(TessMapError::VertexBufferMapFailed)
         }
       }
 
@@ -928,8 +1003,9 @@ fn set_component_format(stride: GLsizei, off: usize, desc: &VertexBufferDesc) {
         );
       }
 
-      VertexAttribType::Integral(Normalized::No) | VertexAttribType::Unsigned(Normalized::No) |
-      VertexAttribType::Boolean => {
+      VertexAttribType::Integral(Normalized::No)
+      | VertexAttribType::Unsigned(Normalized::No)
+      | VertexAttribType::Boolean => {
         // non-normalized integrals / booleans
         gl::VertexAttribIPointer(
           index,
@@ -956,7 +1032,7 @@ fn set_component_format(stride: GLsizei, off: usize, desc: &VertexBufferDesc) {
     // set vertex attribute divisor based on the vertex instancing configuration
     let divisor = match desc.instancing {
       VertexInstancing::On => 1,
-      VertexInstancing::Off => 0
+      VertexInstancing::Off => 0,
     };
     gl::VertexAttribDivisor(index, divisor);
 
@@ -1154,7 +1230,10 @@ impl<'a> TessSlice<'a> {
   }
 
   /// Render a tessellation.
-  pub fn render<C>(&self, ctx: &mut C) where C: ?Sized + GraphicsContext {
+  pub fn render<C>(&self, ctx: &mut C)
+  where
+    C: ?Sized + GraphicsContext,
+  {
     self
       .tess
       .render(ctx, self.start_index, self.vert_nb, self.inst_nb);
