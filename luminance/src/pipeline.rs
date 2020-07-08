@@ -201,7 +201,7 @@ where
   pub fn pipeline<'b, L, D, CS, DS, F>(
     &'b mut self,
     framebuffer: &Framebuffer<L, D, CS, DS>,
-    clear_color: [f32; 4],
+    clear_color: Option<[f32; 4]>,
     f: F,
   ) where
     L: Layerable,
@@ -223,14 +223,17 @@ where
         framebuffer.width() as GLint,
         framebuffer.height() as GLint,
       );
-      gl::ClearColor(
-        clear_color[0],
-        clear_color[1],
-        clear_color[2],
-        clear_color[3],
-      );
-      gl::ClearDepth(1.);
-      gl::Clear(gl::DEPTH_BUFFER_BIT | gl::COLOR_BUFFER_BIT);
+
+      if let Some(clear_color) = clear_color {
+        gl::ClearColor(
+          clear_color[0],
+          clear_color[1],
+          clear_color[2],
+          clear_color[3],
+        );
+        gl::ClearDepth(1.);
+        gl::Clear(gl::DEPTH_BUFFER_BIT | gl::COLOR_BUFFER_BIT);
+      }
     }
 
     let binding_stack = &self.binding_stack;
