@@ -4,7 +4,10 @@
 #![deny(missing_docs)]
 
 use gl;
-use glfw::{self, Context, CursorMode as GlfwCursorMode, SwapInterval, Window, WindowMode};
+use glfw::{
+  Context, CursorMode as GlfwCursorMode, SwapInterval, Window, WindowMode,
+  Action, InitError, Key, Modifiers, MouseButton, Scancode, WindowEvent
+};
 use luminance::context::GraphicsContext;
 use luminance::state::GraphicsState;
 pub use luminance::state::StateQueryError;
@@ -15,7 +18,7 @@ use std::os::raw::c_void;
 use std::rc::Rc;
 use std::sync::mpsc::Receiver;
 
-pub use glfw::{Action, InitError, Key, Modifiers, MouseButton, Scancode, WindowEvent};
+pub use glfw;
 
 /// Error that can be risen while creating a surface.
 #[derive(Debug)]
