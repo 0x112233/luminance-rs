@@ -5,7 +5,8 @@
 
 use gl;
 use glfw::{
-  Context, CursorMode as GlfwCursorMode, SwapInterval, Window, WindowMode,
+  Context, CursorMode as GlfwCursorMode, GLProc,
+   SwapInterval, Window, WindowMode,
   Action, InitError, Key, Modifiers, MouseButton, Scancode, WindowEvent
 };
 use luminance::context::GraphicsContext;
@@ -60,10 +61,31 @@ impl fmt::Display for GlfwSurfaceError {
 /// This type implements `GraphicsContext` so that you can use it to perform render with
 /// **luminance**.
 pub struct GlfwSurface {
-  window: Window,
+  /// Expose window
+  pub window: Window,
   events_rx: Receiver<(f64, WindowEvent)>,
   gfx_state: Rc<RefCell<GraphicsState>>,
   opts: WindowOpt,
+}
+
+impl GlfwSurface {
+  /// Export GLFW's window's wrapper for glfwgetprocaddress()
+  pub fn get_proc_address(&mut self, procname: &str) -> GLProc {
+    self.window.get_proc_address(procname)
+  }
+
+  /// Expose window
+  pub fn window_mut(&mut self) -> &mut Window {
+    &mut self.window
+  }
+
+  // /// Poll events,
+  // pub fn poll_events_with_glfw_handler<'a, F>(&'a mut self, mut glfw_handler: F) -> Box<dyn Iterator<Item = WindowEvent> + 'a>
+  //   where F: FnMut(&WindowEvent) -> ()
+  // {
+  //   self.window.glfw.poll_events();
+  //   Box::new(self.events_rx.try_iter().map(|(_, e)| e))
+  // }
 }
 
 unsafe impl GraphicsContext for GlfwSurface {
